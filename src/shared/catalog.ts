@@ -1,0 +1,57 @@
+import { cities } from '@/data/catalog/cities'
+import { places } from '@/data/catalog/places'
+import { routes } from '@/data/catalog/routes'
+import type { City, Place, PlaceCategory, Route } from '@/shared/types'
+
+const cityById = new Map(cities.map((city) => [city.id, city]))
+const placeById = new Map(places.map((place) => [place.id, place]))
+const routeById = new Map(routes.map((route) => [route.id, route]))
+
+export const categoryLabels: Record<PlaceCategory, string> = {
+  sight: 'Достопримечательность',
+  food: 'Еда',
+  museum: 'Музей',
+  park: 'Парк',
+  transport: 'Транспорт',
+  hotel: 'Отель',
+}
+
+export function wikiImage(file: string, width = 960): string {
+  return `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(file)}?width=${width}`
+}
+
+export function placeImages(place: Place): string[] {
+  return place.images.map((file) => wikiImage(file))
+}
+
+export function routeImages(route: Route): string[] {
+  return route.images.map((file) => wikiImage(file))
+}
+
+export function getCity(id: string): City | undefined {
+  return cityById.get(id)
+}
+
+export function getPlace(id: string): Place | undefined {
+  return placeById.get(id)
+}
+
+export function getRoute(id: string): Route | undefined {
+  return routeById.get(id)
+}
+
+export function placesByCity(cityId: string): Place[] {
+  return places.filter((place) => place.cityId === cityId)
+}
+
+export function routePlaces(route: Route): Place[] {
+  return route.placeIds
+    .map((id) => placeById.get(id))
+    .filter((place): place is Place => Boolean(place))
+}
+
+export function routePolyline(route: Route): [number, number][] {
+  return routePlaces(route).map((place) => [place.lat, place.lng])
+}
+
+export { cities, places, routes }
