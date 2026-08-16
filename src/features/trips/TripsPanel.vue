@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { inject } from 'vue'
 import { useRouter } from 'vue-router'
+import PanelShell from '@/layouts/PanelShell.vue'
 import { useTripsStore } from '@/features/trips/tripsStore'
 import { getPlace } from '@/shared/catalog'
 
@@ -28,10 +29,12 @@ function stopPreview(tripId: string): string {
 </script>
 
 <template>
-  <div class="absolute inset-0 z-20 flex flex-col bg-default/95 backdrop-blur-sm">
-    <div class="flex items-center justify-between gap-2 px-4 pt-3 pb-2">
+  <PanelShell>
+    <div class="flex items-center justify-between gap-2 px-4 pt-2 pb-2 lg:pt-4">
       <div>
-        <h1 class="text-highlighted text-lg font-medium">Поездки</h1>
+        <h1 class="text-highlighted text-[28px] font-bold tracking-tight lg:text-xl lg:font-semibold">
+          Поездки
+        </h1>
         <p class="text-muted text-sm">Маршруты хранятся только на этом устройстве</p>
       </div>
       <UButton icon="i-lucide-plus" size="sm" label="Создать" @click="openCreateTrip" />
@@ -57,7 +60,7 @@ function stopPreview(tripId: string): string {
           class="text-left"
           @click="openTrip(trip.id)"
         >
-          <UCard>
+          <UCard :ui="{ root: 'rounded-2xl' }">
             <div class="flex items-start justify-between gap-2">
               <div>
                 <p class="text-highlighted font-medium">{{ trip.name }}</p>
@@ -71,5 +74,5 @@ function stopPreview(tripId: string): string {
         </button>
       </div>
     </UScrollArea>
-  </div>
+  </PanelShell>
 </template>

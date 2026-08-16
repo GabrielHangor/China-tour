@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import 'maplibre-gl/dist/maplibre-gl.css'
@@ -26,6 +26,7 @@ const categoryColors: Record<PlaceCategory, string> = {
 }
 
 const router = useRouter()
+const route = useRoute()
 const trips = useTripsStore()
 const { position, trail, error, watching, assumeGcj02, start, stop } = useGeolocation()
 
@@ -161,6 +162,8 @@ const distanceLabel = computed(() => {
   return `${nextStop.value.nameRu} · ${formatDistance(haversineKm(position.value, nextStop.value))}`
 })
 
+const panelOpen = computed(() => ['catalog', 'trips', 'trip'].includes(String(route.name)))
+
 function dismissError(): void {
   error.value = null
 }
@@ -240,7 +243,11 @@ watch([position, trail], () => {
   <div class="absolute inset-0">
     <div ref="root" class="tour-map absolute inset-0" />
 
-    <div class="pointer-events-none absolute inset-x-0 top-0 z-10 flex flex-col gap-2 p-3">
+    <div
+      class="pointer-events-none absolute inset-x-0 top-0 z-10 flex flex-col gap-2 px-3 pb-3"
+      :class="panelOpen ? 'lg:left-[calc(27rem+1.5rem)]' : ''"
+      style="padding-top: max(0.75rem, env(safe-area-inset-top))"
+    >
       <div class="pointer-events-auto flex items-start justify-between gap-2">
         <div class="flex flex-wrap gap-2">
           <UButton
@@ -286,7 +293,9 @@ watch([position, trail], () => {
       </UBadge>
     </div>
 
-    <div class="pointer-events-auto absolute right-3 bottom-24 z-10 flex flex-col gap-2">
+    <div
+      class="pointer-events-auto absolute right-3 bottom-24 z-10 flex flex-col gap-2 lg:bottom-6"
+    >
       <UButton
         color="neutral"
         variant="outline"
@@ -317,5 +326,15 @@ watch([position, trail], () => {
 .tour-map .maplibregl-ctrl-bottom-right,
 .tour-map .maplibregl-ctrl-bottom-left {
   display: none !important;
+}
+
+.tour-map .leaflet-bottom {
+  bottom: 5.5rem;
+}
+
+@media (min-width: 1024px) {
+  .tour-map .leaflet-bottom {
+    bottom: 10px;
+  }
 }
 </style>

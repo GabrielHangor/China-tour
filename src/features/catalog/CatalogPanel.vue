@@ -2,6 +2,7 @@
 import { computed, inject, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import PlaceImage from '@/features/catalog/PlaceImage.vue'
+import PanelShell from '@/layouts/PanelShell.vue'
 import { useTripsStore } from '@/features/trips/tripsStore'
 import {
   categoryLabels,
@@ -98,17 +99,24 @@ const highlightedRouteId = computed(() => {
 </script>
 
 <template>
-  <div class="absolute inset-0 z-20 flex flex-col bg-default/95 backdrop-blur-sm">
-    <div class="flex items-center justify-between gap-2 px-4 pt-3 pb-2">
+  <PanelShell>
+    <div class="flex items-center justify-between gap-2 px-4 pt-2 pb-2 lg:pt-4">
       <div>
-        <h1 class="text-highlighted text-lg font-medium">Каталог</h1>
+        <h1 class="text-highlighted text-[28px] font-bold tracking-tight lg:text-xl lg:font-semibold">
+          Каталог
+        </h1>
         <p class="text-muted text-sm">Точки и готовые маршруты по Китаю</p>
       </div>
       <UButton icon="i-lucide-plus" size="sm" label="Поездка" @click="openCreateTrip" />
     </div>
 
     <div class="flex flex-col gap-3 px-4 pb-3">
-      <UInput v-model="query" icon="i-lucide-search" placeholder="Поиск места или маршрута" />
+      <UInput
+        v-model="query"
+        icon="i-lucide-search"
+        placeholder="Поиск места или маршрута"
+        :ui="{ base: 'rounded-full' }"
+      />
       <div class="grid grid-cols-2 gap-2">
         <USelectMenu v-model="selectedCity" :items="cityItems" value-key="value" />
         <USelectMenu v-model="selectedCategory" :items="categoryItems" value-key="value" />
@@ -138,7 +146,7 @@ const highlightedRouteId = computed(() => {
           class="text-left"
           @click="openPlace(place)"
         >
-          <UCard :ui="{ body: 'p-0' }">
+          <UCard :ui="{ root: 'overflow-hidden rounded-2xl', body: 'p-0' }">
             <PlaceImage :src="placeImages(place)[0]" :alt="place.nameRu" class="h-36 w-full" />
             <div class="flex flex-col gap-1 p-3">
               <div class="flex items-start justify-between gap-2">
@@ -163,6 +171,7 @@ const highlightedRouteId = computed(() => {
           v-for="item in filteredRoutes"
           :key="item.id"
           :class="highlightedRouteId === item.id ? 'ring-2 ring-primary' : ''"
+          :ui="{ root: 'overflow-hidden rounded-2xl' }"
         >
           <PlaceImage
             :src="routeImages(item)[0]"
@@ -183,5 +192,5 @@ const highlightedRouteId = computed(() => {
         </UCard>
       </div>
     </UScrollArea>
-  </div>
+  </PanelShell>
 </template>

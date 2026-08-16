@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import PanelShell from '@/layouts/PanelShell.vue'
 import { collectOfflineUrls, prefetchUrls } from '@/features/map/useOfflineTiles'
 import { useTripsStore } from '@/features/trips/tripsStore'
 import { getCity, getPlace, placeImages } from '@/shared/catalog'
@@ -95,11 +96,13 @@ async function removeTrip(): Promise<void> {
 </script>
 
 <template>
-  <div class="absolute inset-0 z-20 flex flex-col bg-default/95 backdrop-blur-sm">
-    <div class="flex items-center gap-2 px-3 pt-3 pb-2">
+  <PanelShell>
+    <div class="flex items-center gap-2 px-3 pt-2 pb-2 lg:pt-4">
       <UButton color="neutral" variant="ghost" icon="i-lucide-arrow-left" square @click="goBack" />
       <div class="min-w-0 flex-1">
-        <h1 class="text-highlighted truncate text-lg font-medium">{{ trip?.name ?? 'Поездка' }}</h1>
+        <h1 class="text-highlighted truncate text-[28px] font-bold tracking-tight lg:text-xl lg:font-semibold">
+          {{ trip?.name ?? 'Поездка' }}
+        </h1>
         <p class="text-muted text-sm">{{ trip?.stops.length ?? 0 }} точек</p>
       </div>
       <UButton
@@ -226,5 +229,5 @@ async function removeTrip(): Promise<void> {
         <UButton color="error" label="Удалить" @click="removeTrip" />
       </template>
     </UModal>
-  </div>
+  </PanelShell>
 </template>
