@@ -1,13 +1,16 @@
 <script setup lang="ts">
-import { inject } from 'vue'
+import { inject, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import PanelShell from '@/layouts/PanelShell.vue'
 import { useTripsStore } from '@/features/trips/tripsStore'
+import type { TripBackup } from '@/features/trips/tripsStore'
 import { getPlace } from '@/shared/catalog'
 
 const openCreateTrip = inject<() => void>('openCreateTrip', () => {})
 const router = useRouter()
 const trips = useTripsStore()
+const toast = useToast()
+const fileInput = ref<HTMLInputElement | null>(null)
 
 function openTrip(id: string): void {
   trips.setActiveTrip(id)
@@ -26,6 +29,49 @@ function stopPreview(tripId: string): string {
   const more = trip.stops.length > 3 ? ` и ещё ${trip.stops.length - 3}` : ''
   return names.join(', ') + more
 }
+
+function downloadBackup(): void {
+  const blob = new Blob([JSON.stringify(trips.exportBackup(), null, 2)], {
+    type: 'application/json',
+  })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = 'china-tour-trips.json'
+  link.click()
+  URL.revokeObjectURL(url)
+  toast.add({
+    title: 'Файл сохранён',
+    description: 'Положите его в Файлы до вылета',
+    color: 'success',
+    icon: 'i-lucide-download',
+  })
+}
+
+async function onImportFile(event: Event): Promise<void> {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (!file) {
+    return
+  }
+  try {
+    const data = JSON.parse(await file.text()) as TripBackup
+    const count = await trips.importBackup(data)
+    toast.add({
+      title: 'Поездки восстановлены',
+      description: `${count} шт.`,
+      color: 'success',
+      icon: 'i-lucide-upload',
+    })
+  } catch {
+    toast.add({
+      title: 'Не получилось прочитать файл',
+      color: 'error',
+      icon: 'i-lucide-triangle-alert',
+    })
+  }
+}
 </script>
 
 <template>
@@ -39,8 +85,31 @@ function stopPreview(tripId: string): string {
         </h1>
         <p class="text-muted text-sm">Маршруты хранятся только на этом устройстве</p>
       </div>
-      <UButton icon="i-lucide-plus" size="sm" label="Создать" @click="openCreateTrip" />
+      <div class="flex shrink-0 items-center gap-1">
+        <UButton
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-download"
+          square
+          @click="downloadBackup"
+        />
+        <UButton
+          color="neutral"
+          variant="ghost"
+          icon="i-lucide-upload"
+          square
+          @click="fileInput?.click()"
+        />
+        <UButton icon="i-lucide-plus" size="sm" label="Создать" @click="openCreateTrip" />
+      </div>
     </div>
+    <input
+      ref="fileInput"
+      type="file"
+      accept="application/json"
+      class="hidden"
+      @change="onImportFile"
+    />
 
     <UScrollArea class="min-h-0 flex-1 px-4 pb-4">
       <UEmpty

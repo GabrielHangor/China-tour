@@ -1,8 +1,14 @@
 import { cities } from '@/data/catalog/cities'
 import { placeImageUrls } from '@/data/catalog/images'
-import { places } from '@/data/catalog/places'
+import { places as catalogPlaces } from '@/data/catalog/places'
 import { routes } from '@/data/catalog/routes'
+import { streetFacts } from '@/data/catalog/street'
 import type { City, Place, PlaceCategory, Route } from '@/shared/types'
+
+export const places: Place[] = catalogPlaces.map((place) => ({
+  ...place,
+  ...streetFacts[place.id],
+}))
 
 const cityById = new Map(cities.map((city) => [city.id, city]))
 const placeById = new Map(places.map((place) => [place.id, place]))
@@ -58,4 +64,4 @@ export function routePolyline(route: Route): [number, number][] {
   return routePlaces(route).map((place) => [place.lat, place.lng])
 }
 
-export { cities, places, routes }
+export { cities, routes }

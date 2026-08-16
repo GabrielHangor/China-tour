@@ -3,6 +3,13 @@ import { computed, ref } from 'vue'
 import { db } from '@/shared/db'
 import type { StopStatus, Trip, TripStop } from '@/shared/types'
 
+export interface TripBackup {
+  version: 1
+  exportedAt: number
+  activeTripId: string | null
+  trips: Trip[]
+}
+
 function now(): number {
   return Date.now()
 }
@@ -126,6 +133,51 @@ export const useTripsStore = defineStore('trips', () => {
     })
   }
 
+  async function setStopNotes(tripId: string, placeId: string, notes: string): Promise<void> {
+    const trip = trips.value.find((item) => item.id === tripId)
+    if (!trip) {
+      return
+    }
+    await persist({
+      ...trip,
+      stops: trip.stops.map((stop) =>
+        stop.placeId === placeId ? { ...stop, notes: notes.trim() || undefined } : stop,
+      ),
+      updatedAt: now(),
+    })
+  }
+
+  function exportBackup(): TripBackup {
+    return {
+      version: 1,
+      exportedAt: now(),
+      activeTripId: activeTripId.value,
+      trips: trips.value,
+    }
+  }
+
+  async function importBackup(data: TripBackup): Promise<number> {
+    if (data.version !== 1 || !Array.isArray(data.trips)) {
+      throw new Error('Неверный файл поездки')
+    }
+    for (const trip of data.trips) {
+      if (!trip?.id || !Array.isArray(trip.stops)) {
+        continue
+      }
+      await persist({
+        id: trip.id,
+        name: trip.name || 'Поездка',
+        stops: trip.stops,
+        createdAt: trip.createdAt || now(),
+        updatedAt: now(),
+      })
+    }
+    if (data.activeTripId) {
+      setActiveTrip(data.activeTripId)
+    }
+    return data.trips.length
+  }
+
   async function addRoutePlaces(tripId: string, placeIds: string[]): Promise<void> {
     const trip = trips.value.find((item) => item.id === tripId)
     if (!trip) {
@@ -154,6 +206,9 @@ export const useTripsStore = defineStore('trips', () => {
     removeStop,
     moveStop,
     setStopStatus,
+    setStopNotes,
     addRoutePlaces,
+    exportBackup,
+    importBackup,
   }
 })

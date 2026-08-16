@@ -7,8 +7,10 @@ import 'maplibre-gl/dist/maplibre-gl.css'
 import '@maplibre/maplibre-gl-leaflet'
 import { useGeolocation } from '@/features/map/useGeolocation'
 import { applyRussianLabels } from '@/features/map/mapLanguage'
+import { useMapStore } from '@/features/map/mapStore'
+import PlaceImage from '@/features/catalog/PlaceImage.vue'
 import { useTripsStore } from '@/features/trips/tripsStore'
-import { getPlace, places, routePolyline, routes } from '@/shared/catalog'
+import { getPlace, placeImages, places, routePolyline, routes } from '@/shared/catalog'
 import { formatDistance, haversineKm, toDisplayLatLng } from '@/shared/coords'
 import type { Basemap, PlaceCategory } from '@/shared/types'
 
@@ -27,6 +29,7 @@ const categoryColors: Record<PlaceCategory, string> = {
 
 const router = useRouter()
 const route = useRoute()
+const mapStore = useMapStore()
 const trips = useTripsStore()
 const { position, trail, error, watching, assumeGcj02, start, stop } = useGeolocation()
 
@@ -155,12 +158,42 @@ const nextStop = computed(() => {
   return getPlace(planned.placeId) ?? null
 })
 
+const nextStopImage = computed(() => (nextStop.value ? placeImages(nextStop.value)[0] : undefined))
+
 const distanceLabel = computed(() => {
   if (!position.value || !nextStop.value) {
     return null
   }
-  return `${nextStop.value.nameRu} · ${formatDistance(haversineKm(position.value, nextStop.value))}`
+  return formatDistance(haversineKm(position.value, nextStop.value))
 })
+
+function flyToPlace(lat: number, lng: number, zoom = 16): void {
+  map?.flyTo(display(lat, lng), zoom)
+}
+
+function focusCatalogPlace(id: string): void {
+  const place = getPlace(id)
+  if (!place || !map) {
+    return
+  }
+  flyToPlace(place.lat, place.lng)
+  mapStore.clearFocus()
+}
+
+function goToNextStop(): void {
+  if (!nextStop.value) {
+    return
+  }
+  flyToPlace(nextStop.value.lat, nextStop.value.lng)
+}
+
+function markNextVisited(): void {
+  const trip = trips.activeTrip
+  if (!trip || !nextStop.value) {
+    return
+  }
+  void trips.setStopStatus(trip.id, nextStop.value.id, 'visited')
+}
 
 const panelOpen = computed(() => ['catalog', 'trips', 'trip'].includes(String(route.name)))
 
@@ -218,6 +251,9 @@ onMounted(() => {
   rebuildPlaces()
   rebuildRoutes()
   rebuildTrip()
+  if (mapStore.focusPlaceId) {
+    focusCatalogPlace(mapStore.focusPlaceId)
+  }
 })
 
 onBeforeUnmount(() => {
@@ -237,6 +273,14 @@ watch([position, trail], () => {
     map.flyTo(display(position.value.lat, position.value.lng), 13)
   }
 })
+watch(
+  () => mapStore.focusPlaceId,
+  (id) => {
+    if (id) {
+      focusCatalogPlace(id)
+    }
+  },
+)
 </script>
 
 <template>
@@ -288,9 +332,48 @@ watch([position, trail], () => {
         :title="error"
         :close="{ onClick: dismissError }"
       />
-      <UBadge v-if="distanceLabel" color="primary" variant="subtle" size="lg" class="self-start">
-        {{ distanceLabel }}
-      </UBadge>
+    </div>
+
+    <div
+      v-if="nextStop"
+      class="pointer-events-auto absolute bottom-24 z-10 lg:bottom-6"
+      :class="panelOpen ? 'lg:left-[calc(27rem+1.75rem)] right-16 left-3' : 'left-3 right-16'"
+    >
+      <div
+        class="bg-default/80 flex overflow-hidden rounded-2xl shadow-xl ring-1 ring-default/60 backdrop-blur-xl"
+      >
+        <button type="button" class="h-20 w-20 shrink-0" @click="goToNextStop">
+          <PlaceImage :src="nextStopImage" :alt="nextStop.nameRu" class="size-full" />
+        </button>
+        <div class="flex min-w-0 flex-1 flex-col justify-center gap-0.5 px-3 py-2">
+          <p class="text-muted text-[10px] font-medium tracking-wide uppercase">Следующая</p>
+          <p class="text-highlighted truncate text-lg leading-tight font-semibold">
+            {{ nextStop.nameZh }}
+          </p>
+          <p class="text-muted truncate text-xs">
+            {{ nextStop.nameRu }}
+            <span v-if="distanceLabel"> · {{ distanceLabel }}</span>
+          </p>
+        </div>
+        <div class="flex shrink-0 flex-col justify-center gap-1 p-2">
+          <UButton
+            size="xs"
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-locate"
+            square
+            @click="goToNextStop"
+          />
+          <UButton
+            size="xs"
+            color="primary"
+            variant="soft"
+            icon="i-lucide-check"
+            square
+            @click="markNextVisited"
+          />
+        </div>
+      </div>
     </div>
 
     <div

@@ -27,7 +27,7 @@ export default defineConfig({
     }),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg', 'icon.svg'],
+      includeAssets: ['favicon.svg', 'icon.svg', 'apple-touch-icon.png'],
       manifest: {
         name: 'China Tour',
         short_name: 'China Tour',
@@ -40,6 +40,12 @@ export default defineConfig({
         scope: '.',
         orientation: 'any',
         icons: [
+          {
+            src: 'apple-touch-icon.png',
+            sizes: '180x180',
+            type: 'image/png',
+            purpose: 'any',
+          },
           {
             src: 'icon.svg',
             sizes: 'any',

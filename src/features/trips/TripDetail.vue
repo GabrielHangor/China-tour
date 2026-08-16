@@ -13,7 +13,7 @@ const toast = useToast()
 
 const confirmOpen = ref(false)
 const downloading = ref(false)
-const progress = ref({ done: 0, total: 0 })
+const progress = ref({ done: 0, total: 0, ok: 0, failed: 0 })
 
 const trip = computed(() => {
   const id = route.params.tripId
@@ -34,6 +34,7 @@ const timelineItems = computed(() => {
       color: stop.status === 'visited' ? 'success' : 'neutral',
       index,
       status: stop.status,
+      notes: stop.notes ?? '',
     }
   })
 })
@@ -42,11 +43,18 @@ const progressPercent = computed(() => {
   if (progress.value.total === 0) {
     return 0
   }
-  return Math.round((progress.value.done / progress.value.total) * 100)
+  return Math.round((progress.value.ok / progress.value.total) * 100)
 })
 
 function goBack(): void {
   void router.push({ name: 'trips' })
+}
+
+function saveNotes(placeId: string, notes: string): void {
+  if (!trip.value) {
+    return
+  }
+  void trips.setStopNotes(trip.value.id, placeId, notes)
 }
 
 async function prepareOffline(): Promise<void> {
@@ -66,7 +74,7 @@ async function prepareOffline(): Promise<void> {
   }
 
   downloading.value = true
-  progress.value = { done: 0, total: 0 }
+  progress.value = { done: 0, total: 0, ok: 0, failed: 0 }
   const urls = [
     ...collectOfflineUrls(tripPlaces),
     ...tripPlaces.flatMap((place) => placeImages(place)),
@@ -75,10 +83,19 @@ async function prepareOffline(): Promise<void> {
     progress.value = value
   })
   downloading.value = false
+  if (progress.value.ok === 0) {
+    toast.add({
+      title: 'В кэш почти ничего не попало',
+      description: 'Включите слой «Китай» и пройдите карту по стопам — так тайлы точно сохранятся.',
+      color: 'warning',
+      icon: 'i-lucide-wifi-off',
+    })
+    return
+  }
   toast.add({
-    title: 'Офлайн-пакет готов',
-    description: 'Тайлы и фото стопов сохранены в кэше браузера',
-    color: 'success',
+    title: progress.value.failed ? 'Часть файлов не скачалась' : 'Офлайн-пакет готов',
+    description: `Сохранено ${progress.value.ok} из ${progress.value.total}. Русская карта офлайн не кэшируется.`,
+    color: progress.value.failed ? 'warning' : 'success',
     icon: 'i-lucide-download',
   })
 }
@@ -126,17 +143,22 @@ async function removeTrip(): Promise<void> {
       />
 
       <div v-else class="flex flex-col gap-4">
-        <UCard>
+        <UCard :ui="{ root: 'rounded-2xl' }">
           <div class="flex flex-col gap-3">
             <p class="text-sm font-medium">Подготовить офлайн</p>
             <p class="text-muted text-sm">
-              Скачает тайлы вокруг стопов и фото. Сделайте это на Wi‑Fi до вылета.
+              Качает тайлы слоя «Китай» вокруг стопов и фото. Делайте на Wi‑Fi до вылета. Русская
+              карта в КНР может не открыться и офлайн не обещается.
             </p>
             <UProgress v-if="downloading" :model-value="progressPercent" />
+            <p v-if="downloading" class="text-muted text-xs">
+              Сохранено {{ progress.ok }} · ошибок {{ progress.failed }} · всего
+              {{ progress.total }}
+            </p>
             <UButton
               icon="i-lucide-download"
               :loading="downloading"
-              :label="downloading ? `${progress.done} / ${progress.total}` : 'Скачать для офлайна'"
+              :label="downloading ? `${progress.ok} / ${progress.total}` : 'Скачать для офлайна'"
               @click="prepareOffline"
             />
           </div>
@@ -157,7 +179,7 @@ async function removeTrip(): Promise<void> {
           <div
             v-for="item in timelineItems"
             :key="item.value"
-            class="border-muted rounded-lg border p-3"
+            class="border-muted rounded-2xl border p-3"
           >
             <div class="flex items-start justify-between gap-2">
               <button
@@ -172,6 +194,13 @@ async function removeTrip(): Promise<void> {
                 {{ item.status === 'visited' ? 'посещено' : 'план' }}
               </UBadge>
             </div>
+            <UInput
+              class="mt-3"
+              size="sm"
+              :model-value="item.notes"
+              placeholder="Заметка: бронь, выходной…"
+              @update:model-value="(value: string) => saveNotes(item.value, value)"
+            />
             <div class="mt-3 flex flex-wrap gap-1">
               <UButton
                 size="xs"

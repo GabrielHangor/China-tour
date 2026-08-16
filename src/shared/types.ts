@@ -22,6 +22,9 @@ export interface Place {
   images: string[]
   tags: string[]
   tips?: string
+  addressZh?: string
+  metroZh?: string
+  hours?: string
 }
 
 export interface Route {

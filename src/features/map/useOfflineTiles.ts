@@ -7,6 +7,8 @@ const GAODE_TEMPLATE =
 export interface OfflineProgress {
   done: number
   total: number
+  ok: number
+  failed: number
 }
 
 function tileUrl(template: string, z: number, x: number, y: number): string {
@@ -52,8 +54,10 @@ export async function prefetchUrls(
   onProgress: (progress: OfflineProgress) => void,
 ): Promise<void> {
   let done = 0
+  let ok = 0
+  let failed = 0
   const total = urls.length
-  onProgress({ done, total })
+  onProgress({ done, total, ok, failed })
 
   const workers = 8
   let cursor = 0
@@ -66,17 +70,22 @@ export async function prefetchUrls(
         continue
       }
       try {
-        await fetch(url, { mode: 'cors', credentials: 'omit' })
+        const response = await fetch(url, { mode: 'cors', credentials: 'omit' })
+        if (response.ok) {
+          ok += 1
+        } else {
+          failed += 1
+        }
       } catch {
-        // Tile hosts may block CORS from the page; the service worker still caches navigated tiles.
+        failed += 1
       }
       done += 1
       if (done === total || done % 20 === 0) {
-        onProgress({ done, total })
+        onProgress({ done, total, ok, failed })
       }
     }
   }
 
   await Promise.all(Array.from({ length: workers }, () => run()))
-  onProgress({ done: total, total })
+  onProgress({ done: total, total, ok, failed })
 }
