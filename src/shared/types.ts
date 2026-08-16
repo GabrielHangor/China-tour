@@ -47,4 +47,4 @@ export interface Trip {
   updatedAt: number
 }
 
-export type Basemap = 'osm' | 'gaode'
+export type Basemap = 'ru' | 'gaode'

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { categoryLabels, getCity, getPlace, placeImages } from '@/shared/catalog'
+import PlaceImage from '@/features/catalog/PlaceImage.vue'
 import { useTripsStore } from '@/features/trips/tripsStore'
+import { categoryLabels, getCity, getPlace, placeImages } from '@/shared/catalog'
 
 const route = useRoute()
 const router = useRouter()
@@ -74,12 +75,7 @@ async function addToTrip(): Promise<void> {
   >
     <template v-if="place" #body>
       <div class="flex flex-col gap-4">
-        <img
-          v-if="images[0]"
-          :src="images[0]"
-          :alt="place.nameRu"
-          class="h-48 w-full rounded-lg object-cover"
-        />
+        <PlaceImage :src="images[0]" :alt="place.nameRu" class="h-48 w-full rounded-lg" />
         <div class="flex flex-wrap gap-2">
           <UBadge color="neutral" variant="subtle">{{ categoryLabels[place.category] }}</UBadge>
           <UBadge v-for="tag in place.tags" :key="tag" color="primary" variant="subtle">

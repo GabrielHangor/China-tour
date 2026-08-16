@@ -1,4 +1,5 @@
 import { cities } from '@/data/catalog/cities'
+import { placeImageUrls } from '@/data/catalog/images'
 import { places } from '@/data/catalog/places'
 import { routes } from '@/data/catalog/routes'
 import type { City, Place, PlaceCategory, Route } from '@/shared/types'
@@ -16,16 +17,19 @@ export const categoryLabels: Record<PlaceCategory, string> = {
   hotel: 'Отель',
 }
 
-export function wikiImage(file: string, width = 960): string {
-  return `https://commons.wikimedia.org/wiki/Special:FilePath/${encodeURIComponent(file)}?width=${width}`
-}
-
 export function placeImages(place: Place): string[] {
-  return place.images.map((file) => wikiImage(file))
+  const url = placeImageUrls[place.id]
+  return url ? [url] : []
 }
 
 export function routeImages(route: Route): string[] {
-  return route.images.map((file) => wikiImage(file))
+  for (const placeId of route.placeIds) {
+    const url = placeImageUrls[placeId]
+    if (url) {
+      return [url]
+    }
+  }
+  return []
 }
 
 export function getCity(id: string): City | undefined {

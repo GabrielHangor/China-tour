@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, inject, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import PlaceImage from '@/features/catalog/PlaceImage.vue'
 import { useTripsStore } from '@/features/trips/tripsStore'
 import {
   categoryLabels,
@@ -138,12 +139,7 @@ const highlightedRouteId = computed(() => {
           @click="openPlace(place)"
         >
           <UCard :ui="{ body: 'p-0' }">
-            <img
-              :src="placeImages(place)[0]"
-              :alt="place.nameRu"
-              class="h-36 w-full object-cover"
-              loading="lazy"
-            />
+            <PlaceImage :src="placeImages(place)[0]" :alt="place.nameRu" class="h-36 w-full" />
             <div class="flex flex-col gap-1 p-3">
               <div class="flex items-start justify-between gap-2">
                 <div>
@@ -168,11 +164,10 @@ const highlightedRouteId = computed(() => {
           :key="item.id"
           :class="highlightedRouteId === item.id ? 'ring-2 ring-primary' : ''"
         >
-          <img
+          <PlaceImage
             :src="routeImages(item)[0]"
             :alt="item.nameRu"
-            class="mb-3 h-36 w-full rounded-lg object-cover"
-            loading="lazy"
+            class="mb-3 h-36 w-full rounded-lg"
           />
           <div class="flex flex-col gap-2">
             <p class="text-highlighted font-medium">{{ item.nameRu }}</p>

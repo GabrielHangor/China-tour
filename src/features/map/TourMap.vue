@@ -3,15 +3,18 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
+import 'maplibre-gl/dist/maplibre-gl.css'
+import '@maplibre/maplibre-gl-leaflet'
 import { useGeolocation } from '@/features/map/useGeolocation'
+import { applyRussianLabels } from '@/features/map/mapLanguage'
 import { useTripsStore } from '@/features/trips/tripsStore'
 import { getPlace, places, routePolyline, routes } from '@/shared/catalog'
 import { formatDistance, haversineKm, toDisplayLatLng } from '@/shared/coords'
 import type { Basemap, PlaceCategory } from '@/shared/types'
 
-const OSM_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
+const OPENFREEMAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty'
 const GAODE_URL =
-  'https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}'
+  'https://webrd0{s}.is.autonavi.com/appmaptile?lang=en&size=1&scale=1&style=8&x={x}&y={y}&z={z}'
 
 const categoryColors: Record<PlaceCategory, string> = {
   sight: '#dc2626',
@@ -27,11 +30,11 @@ const trips = useTripsStore()
 const { position, trail, error, watching, assumeGcj02, start, stop } = useGeolocation()
 
 const root = ref<HTMLElement | null>(null)
-const basemap = ref<Basemap>('osm')
+const basemap = ref<Basemap>('ru')
 const settingsOpen = ref(false)
 
 let map: L.Map | undefined
-let osmLayer: L.TileLayer | undefined
+let ruLayer: L.MaplibreGL | undefined
 let gaodeLayer: L.TileLayer | undefined
 const markersLayer = L.layerGroup()
 const routesLayer = L.layerGroup()
@@ -109,16 +112,29 @@ function rebuildGeo(): void {
   }
 }
 
+function bindRussianLabels(layer: L.MaplibreGL): void {
+  const glMap = layer.getMaplibreMap()
+  const apply = (): void => {
+    applyRussianLabels(glMap)
+  }
+  if (glMap.isStyleLoaded()) {
+    apply()
+    return
+  }
+  glMap.once('load', apply)
+}
+
 function applyBasemap(): void {
-  if (!map || !osmLayer || !gaodeLayer) {
+  if (!map || !ruLayer || !gaodeLayer) {
     return
   }
   if (basemap.value === 'gaode') {
-    map.removeLayer(osmLayer)
+    map.removeLayer(ruLayer)
     gaodeLayer.addTo(map)
   } else {
     map.removeLayer(gaodeLayer)
-    osmLayer.addTo(map)
+    ruLayer.addTo(map)
+    bindRussianLabels(ruLayer)
   }
   rebuildPlaces()
   rebuildRoutes()
@@ -170,18 +186,30 @@ onMounted(() => {
   if (!root.value) {
     return
   }
-  map = L.map(root.value, { zoomControl: false, attributionControl: true }).setView(
-    [35.2, 105.5],
-    5,
+  map = L.map(root.value, {
+    zoomControl: false,
+    attributionControl: true,
+    minZoom: 2,
+    maxBounds: [
+      [-85, -180],
+      [85, 180],
+    ],
+    maxBoundsViscosity: 1,
+  }).setView([35.2, 105.5], 5)
+  map.attributionControl.addAttribution(
+    '&copy; <a href="https://openfreemap.org">OpenFreeMap</a> &copy; OpenMapTiles &copy; OpenStreetMap',
   )
   L.control.zoom({ position: 'bottomright' }).addTo(map)
-  osmLayer = L.tileLayer(OSM_URL, { maxZoom: 18, attribution: '&copy; OpenStreetMap' })
+  ruLayer = L.maplibreGL({
+    style: OPENFREEMAP_STYLE,
+  })
   gaodeLayer = L.tileLayer(GAODE_URL, {
     maxZoom: 18,
     subdomains: '1234',
     attribution: 'Gaode / Amap',
   })
-  osmLayer.addTo(map)
+  ruLayer.addTo(map)
+  bindRussianLabels(ruLayer)
   routesLayer.addTo(map)
   markersLayer.addTo(map)
   tripLayer.addTo(map)
@@ -219,16 +247,16 @@ watch([position, trail], () => {
         <div class="flex flex-wrap gap-2">
           <UButton
             size="sm"
-            :color="basemap === 'osm' ? 'primary' : 'neutral'"
-            :variant="basemap === 'osm' ? 'solid' : 'outline'"
-            label="OSM"
-            @click="basemap = 'osm'"
+            :color="basemap === 'ru' ? 'primary' : 'neutral'"
+            :variant="basemap === 'ru' ? 'solid' : 'outline'"
+            label="Русский"
+            @click="basemap = 'ru'"
           />
           <UButton
             size="sm"
             :color="basemap === 'gaode' ? 'primary' : 'neutral'"
             :variant="basemap === 'gaode' ? 'solid' : 'outline'"
-            label="Gaode"
+            label="Китай"
             @click="basemap = 'gaode'"
           />
         </div>
@@ -237,7 +265,8 @@ watch([position, trail], () => {
           <template #content>
             <div class="flex w-64 flex-col gap-3 p-3">
               <p class="text-sm text-muted">
-                Если маркер «я» смещён на 300–500 м на китайском Android, включите сдвиг GPS.
+                Слой «Русский» — подписи name:ru, иначе английский. «Китай» нужен, если OpenFreeMap
+                недоступен в КНР. Если маркер смещён на 300–500 м, включите сдвиг GPS.
               </p>
               <USwitch v-model="assumeGcj02" label="GPS в GCJ-02" />
             </div>

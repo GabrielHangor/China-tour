@@ -60,8 +60,7 @@ export default defineConfig({
         runtimeCaching: [
           {
             urlPattern: ({ url }) =>
-              url.hostname.includes('tile.openstreetmap.org') ||
-              url.hostname.includes('is.autonavi.com'),
+              url.hostname.includes('openfreemap.org') || url.hostname.includes('is.autonavi.com'),
             handler: 'CacheFirst',
             options: {
               cacheName: 'map-tiles',

@@ -1,9 +1,8 @@
 import { lngLatToTile } from '@/shared/coords'
 import type { Place } from '@/shared/types'
 
-const OSM_TEMPLATE = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
 const GAODE_TEMPLATE =
-  'https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}'
+  'https://webrd01.is.autonavi.com/appmaptile?lang=en&size=1&scale=1&style=8&x={x}&y={y}&z={z}'
 
 export interface OfflineProgress {
   done: number
@@ -25,7 +24,6 @@ function tilesAround(lat: number, lng: number, zoom: number, radius: number): st
       if (tileY < 0 || tileY >= n) {
         continue
       }
-      urls.push(tileUrl(OSM_TEMPLATE, zoom, tileX, tileY))
       urls.push(tileUrl(GAODE_TEMPLATE, zoom, tileX, tileY))
     }
   }
