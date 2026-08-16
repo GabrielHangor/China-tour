@@ -188,7 +188,7 @@ onMounted(() => {
   }
   map = L.map(root.value, {
     zoomControl: false,
-    attributionControl: true,
+    attributionControl: false,
     minZoom: 2,
     maxBounds: [
       [-85, -180],
@@ -196,17 +196,15 @@ onMounted(() => {
     ],
     maxBoundsViscosity: 1,
   }).setView([35.2, 105.5], 5)
-  map.attributionControl.addAttribution(
-    '&copy; <a href="https://openfreemap.org">OpenFreeMap</a> &copy; OpenMapTiles &copy; OpenStreetMap',
-  )
   L.control.zoom({ position: 'bottomright' }).addTo(map)
   ruLayer = L.maplibreGL({
     style: OPENFREEMAP_STYLE,
+    attributionControl: false,
   })
   gaodeLayer = L.tileLayer(GAODE_URL, {
     maxZoom: 18,
     subdomains: '1234',
-    attribution: 'Gaode / Amap',
+    attribution: '',
   })
   ruLayer.addTo(map)
   bindRussianLabels(ruLayer)
@@ -265,8 +263,8 @@ watch([position, trail], () => {
           <template #content>
             <div class="flex w-64 flex-col gap-3 p-3">
               <p class="text-sm text-muted">
-                Слой «Русский» — подписи name:ru, иначе английский. «Китай» нужен, если OpenFreeMap
-                недоступен в КНР. Если маркер смещён на 300–500 м, включите сдвиг GPS.
+                Слой «Русский» — подписи на русском, иначе английский. «Китай» нужен, если карта не
+                открывается в КНР. Если маркер смещён на 300–500 м, включите сдвиг GPS.
               </p>
               <USwitch v-model="assumeGcj02" label="GPS в GCJ-02" />
             </div>
@@ -312,5 +310,12 @@ watch([position, trail], () => {
 .tour-map .leaflet-pane,
 .leaflet-container {
   z-index: 0;
+}
+
+.tour-map .leaflet-control-attribution,
+.tour-map .maplibregl-ctrl-attrib,
+.tour-map .maplibregl-ctrl-bottom-right,
+.tour-map .maplibregl-ctrl-bottom-left {
+  display: none !important;
 }
 </style>
