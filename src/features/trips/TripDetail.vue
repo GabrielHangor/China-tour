@@ -100,7 +100,9 @@ async function removeTrip(): Promise<void> {
     <div class="flex items-center gap-2 px-3 pt-2 pb-2 lg:pt-4">
       <UButton color="neutral" variant="ghost" icon="i-lucide-arrow-left" square @click="goBack" />
       <div class="min-w-0 flex-1">
-        <h1 class="text-highlighted truncate text-[28px] font-bold tracking-tight lg:text-xl lg:font-semibold">
+        <h1
+          class="text-highlighted truncate text-[28px] font-bold tracking-tight lg:text-xl lg:font-semibold"
+        >
           {{ trip?.name ?? 'Поездка' }}
         </h1>
         <p class="text-muted text-sm">{{ trip?.stops.length ?? 0 }} точек</p>

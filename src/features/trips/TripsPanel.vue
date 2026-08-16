@@ -32,7 +32,9 @@ function stopPreview(tripId: string): string {
   <PanelShell>
     <div class="flex items-center justify-between gap-2 px-4 pt-2 pb-2 lg:pt-4">
       <div>
-        <h1 class="text-highlighted text-[28px] font-bold tracking-tight lg:text-xl lg:font-semibold">
+        <h1
+          class="text-highlighted text-[28px] font-bold tracking-tight lg:text-xl lg:font-semibold"
+        >
           Поездки
         </h1>
         <p class="text-muted text-sm">Маршруты хранятся только на этом устройстве</p>
